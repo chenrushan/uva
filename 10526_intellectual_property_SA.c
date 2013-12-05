@@ -25,29 +25,30 @@ read_code(void)
 {
     TDP_len = len = 0;
 
-    scanf("%d", &nfrags);
+    scanf("%d\n", &nfrags);
     if (nfrags == 0) {
         return 1;
     }
 
     /* read "BEGIN TDP" */
-    fgets(line + len, MAX_LEN - len, stdin);
+    fgets(str + len, MAX_LEN - len, stdin);
     while (1) {
-        fgets(line + len, MAX_LEN - len, stdin);
+        fgets(str + len, MAX_LEN - len, stdin);
 
-        if (line[len] == 'E' && line[len + 1] == 'N') {
-            if (! strcmp(line + len, "END TDP CODEBASE")) {
+        if (str[len] == 'E' && str[len + 1] == 'N') {
+            if (! strcmp(str + len, "END TDP CODEBASE\n")) {
                 /* read "BEGIN JCN" */
-                fgets(line + len, MAX_LEN - len, stdin);
+                fgets(str + len, MAX_LEN - len, stdin);
                 TDP_len = len;
-                line[len++] = '\001';
+                str[len++] = '\001';
                 continue;
-            } else if (! strcmp(line + len, "END JCN CODEBASE")) {
+            } else if (! strcmp(str + len, "END JCN CODEBASE\n")) {
                 break;
             }
         }
-        len += strlen(line + len);
+        len += strlen(str + len);
     }
+    str[len] = '\0';
 
     return 0;
 }
@@ -57,6 +58,7 @@ print_code(void)
 {
     int i = 0;
 
+    putchar('{');
     for (i = 0; i < TDP_len; ++i) {
         putchar(str[i]);
     }
@@ -64,13 +66,17 @@ print_code(void)
     for (i = TDP_len + 1; i < len; ++i) {
         putchar(str[i]);
     }
+    putchar('}');
+    putchar('\n');
 }
 
 int
 main(int argc, char **argv)
 {
-    read_code();
-    print_code();
+    while (! read_code()) {
+        print_code();
+    }
+
     return 0;
 }
 
