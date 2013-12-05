@@ -12,9 +12,30 @@
 #define MAX_LEN 100010
 #define MAX_LINE_LEN 50010
 
+/* ====================================================================== */
+/*                      suffix array implementation                       */
+/* ====================================================================== */
+
+struct t_suffix_array {
+    int *SA; /* suffix array */
+    int *LCP; /* longest common prefix array */
+    int len; /* lenght of suffix array */
+};
+
+int
+SA_new(struct t_suffix_array **p_sa, int len)
+{
+    struct t_suffix_array *sa = NULL;
+    size_t memsz = sizeof(*sa) + sizeof(int) * len * 2;
+
+}
+
+/* ====================================================================== */
+
 char str[MAX_LEN];
 int TDP_len, len;
 int ncase, nfrags;
+int SA[MAX_LEN], LCP[MAX_LEN];
 
 /*
  * return 1 if number of fragments = 0, 0 otherwise
