@@ -14,20 +14,61 @@
 
 /* ====================================================================== */
 /*                      suffix array implementation                       */
+/*                         only for ascii string                          */
 /* ====================================================================== */
 
 struct t_suffix_array {
     int *SA; /* suffix array */
     int *LCP; /* longest common prefix array */
-    int len; /* lenght of suffix array */
+    int size; /* size of suffix array */
+    int len; /* number of slots used */
 };
 
 int
-SA_new(struct t_suffix_array **p_sa, int len)
+SA_new(struct t_suffix_array **p_sa, int size)
 {
     struct t_suffix_array *sa = NULL;
-    size_t memsz = sizeof(*sa) + sizeof(int) * len * 2;
+    size_t memsz = sizeof(*sa) + sizeof(int) * size * 2;
 
+    sa = calloc(1, memsz);
+    if (sa == NULL) {
+        return -1;
+    }
+    sa->SA = (int *)(sa + 1);
+    sa->LCP = (int *)(sa->SA + size);
+    sa->size = size;
+
+    *p_sa = sa;
+    return 0;
+}
+
+int
+SA_init(struct t_suffix_array *sa)
+{
+    sa->len = 0;
+    return 0;
+}
+
+int
+SA_create_sa_cntsort(struct t_suffix_array *sa, const char *str, int len)
+{
+    sa->len = len;
+}
+
+int
+SA_create_lcp(struct t_suffix_array *sa)
+{
+    
+}
+
+void
+SA_free(struct t_suffix_array **p_sa)
+{
+    if (p_sa == NULL) {
+        return;
+    }
+    free(*p_sa);
+    *p_sa = NULL;
 }
 
 /* ====================================================================== */
