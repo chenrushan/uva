@@ -24,6 +24,15 @@ struct t_suffix_array {
     int len; /* number of slots used */
 };
 
+/* buffer used in counting sort, one buffer per thread */
+struct t_sa_cntsort_buf {
+    int *count;
+    int *SA2; /* SA for S_l:2l */
+    int *rank;
+    int *rank2; /* rank for S_l:2l */
+    int size;
+};
+
 int
 SA_new(struct t_suffix_array **p_sa, int size)
 {
@@ -43,6 +52,32 @@ SA_new(struct t_suffix_array **p_sa, int size)
 }
 
 int
+SA_create_cntsort_buf(struct t_suffix_array *sa, struct t_sa_cntsort_buf **p_buf)
+{
+    struct t_sa_cntsort_buf *buf = NULL;
+    size_t memsz = 4 * sa->size;
+
+    buf = calloc(1, memsz);
+    if (buf == NULL) {
+        return -1;
+    }
+    buf->count = (int *)buf;
+    buf->SA2 = buf->count + sa->size;
+    buf->rank = buf->SA2 + sa->size;
+    buf->rank2 = buf->rank + sa->size;
+    buf->size = sa->size;
+
+    *p_buf = buf;
+    return 0;
+}
+
+int
+SA_init_cntsort_buf(struct t_sa_cntsort_buf *buf)
+{
+    memset(buf, 0, 4 * buf->size);
+}
+
+int
 SA_init(struct t_suffix_array *sa)
 {
     sa->len = 0;
@@ -50,9 +85,23 @@ SA_init(struct t_suffix_array *sa)
 }
 
 int
-SA_create_sa_cntsort(struct t_suffix_array *sa, const char *str, int len)
+SA_create_sa_cntsort(struct t_suffix_array *sa, const char *str, int len,
+                     struct t_sa_cntsort_buf *buf)
 {
+    int l = 0, i = 0, r = 0;
+
     sa->len = len;
+
+    SA_init_cntsort_buf(buf);
+
+    /* initialize SA[] and rank[] for l = 1 */
+    for (i = 0; i < len; ++i) {
+        buf->rank[i] = str[i];
+        buf->count[str[i]] += 1;
+    }
+    for (i = 1; i < len; ++i) {
+        buf->count[i] += buf->count[i - 1];
+    }
 }
 
 int
