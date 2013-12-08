@@ -144,7 +144,7 @@ SA_print_sa(const char *id, int *SA, const char *str, int len)
     }
     printf("\n");
     for (r = 0; r < len; ++r) {
-        printf("%d:\t", r);
+        printf("%d:\t", SA[r]);
         for (i = SA[r]; i < len; ++i) {
             if (str[i] == '\n') {
                 printf("*");
@@ -375,6 +375,7 @@ SA_free(struct t_suffix_array **p_sa)
 struct t_match {
     int len;
     int pos;
+    int JCN_pos;
 };
 
 char str[MAX_LEN];
@@ -394,7 +395,7 @@ match_cmp(const void *_m1, const void *_m2)
     if (m1->len != m2->len) {
         return m2->len - m1->len;
     } else {
-        return m1->pos - m2->pos;
+        return m1->JCN_pos - m2->JCN_pos;
     }
 }
 
@@ -472,6 +473,7 @@ get_matchs(struct t_suffix_array *sa)
         if (j < TDP_len && sa->LCP[r] != 0) {
             matchs[nmatchs].len = sa->LCP[r];
             matchs[nmatchs].pos = j;
+            matchs[nmatchs].JCN_pos = i - TDP_len - 1;
             nmatchs += 1;
         }
 
@@ -481,6 +483,7 @@ get_matchs(struct t_suffix_array *sa)
             if (j < TDP_len && sa->LCP[r + 1] != 0) {
                 matchs[nmatchs].len = sa->LCP[r + 1];
                 matchs[nmatchs].pos = j;
+                matchs[nmatchs].JCN_pos = i - TDP_len - 1;
                 nmatchs += 1;
             }
         }
@@ -490,21 +493,30 @@ get_matchs(struct t_suffix_array *sa)
 void
 print_match(void)
 {
-    int i = 0;
+    int i = 0, n = 0;
 
-    for (i = 0; i < nmatchs; ++i) {
-        printf("(%d, %d):\t", matchs[i].pos, matchs[i].len);
+    memset(flag, 0, len * sizeof(*flag));
+
+    for (i = 0; i < nmatchs ; ++i) {
+        /* check if this match is contained within another match */
+        // int sum = matchs[i].pos + matchs[i].len;
+        // if (flag[sum] == 1) {
+        //     continue;
+        // }
+        // flag[sum] = 1;
+
+        n += 1;
+
+        printf("INFRINGING SEGMENT %d LENGTH %d POSITION %d\n",
+               n, matchs[i].len, matchs[i].JCN_pos);
         int j = 0;
         for (j = 0; j < matchs[i].len; ++j) {
             char c = str[matchs[i].pos + j];
-            if (c == '\n') {
-                putchar('*');
-            } else {
-                putchar(c);
-            }
+            putchar(c);
         }
         putchar('\n');
     }
+    putchar('\n');
 }
 
 int
@@ -521,6 +533,9 @@ main(int argc, char **argv)
 
     while (! read_code()) {
         ncase += 1;
+        printf("CASE %d\n", ncase);
+
+        printf("TDP_len: %d\n", TDP_len);
 
         /* print_code(); */
 
@@ -528,14 +543,12 @@ main(int argc, char **argv)
         SA_create_sa_cntsort(sa, buf);
         SA_create_lcp(sa, buf);
 
-        /* SA_print_sa("SA", sa->SA, sa->str, sa->len); */
+        SA_print_sa("SA", sa->SA, sa->str, sa->len);
         /* SA_print_lcp(sa); */
 
         get_matchs(sa);
         qsort(matchs, nmatchs, sizeof(*matchs), match_cmp);
-
-        /* print_match(); */
-
+        print_match();
     }
 
     SA_free_cntsort_buf(&buf);
