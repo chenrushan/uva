@@ -111,21 +111,23 @@ SA_init_cntsort_buf(struct t_sa_cntsort_buf *buf)
 }
 
 void
-SA_print(struct t_suffix_array *sa)
+SA_print(int *SA, const char *str, int len)
 {
     int r = 0, i = 0;
 
+    printf("--------------------------------------------------\n");
+
     printf("SA:\n");
-    for (r = 0; r < sa->len; ++r) {
-        printf("%d ", sa->SA[r]);
+    for (r = 0; r < len; ++r) {
+        printf("%d ", SA[r]);
     }
     printf("\n");
-    for (r = 0; r < sa->len; ++r) {
-        for (i = sa->SA[r]; i < sa->len; ++i) {
-            if (sa->str[i] == '\n') {
+    for (r = 0; r < len; ++r) {
+        for (i = SA[r]; i < len; ++i) {
+            if (str[i] == '\n') {
                 printf("[\\n]");
             } else {
-                printf("%c", sa->str[i]);
+                printf("%c", str[i]);
             }
         }
         printf("\n");
@@ -156,10 +158,11 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
 
     SA_init_cntsort_buf(buf);
 
+    printf("%d: %s\n", len, str);
+
     /*
      * initialize SA[] and rank[] for l = 1
      */
-    int _len = (len < sa->vcb_size ? sa->vcb_size : len);
     for (i = 0; i < len; ++i) {
         rank[i] = str[i];
         count[rank[i]] += 1;
@@ -170,6 +173,16 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
     for (i = 0; i < len; ++i) {
         SA[--count[rank[i]]] = i;
     }
+    /* reset count */
+    memset(count, 0, sizeof(int) * sa->size);
+    for (i = 0; i < len; ++i) {
+        count[rank[i]] += 1;
+    }
+    for (r = 1; r < sa->vcb_size; ++r) {
+        count[r] += count[r - 1];
+    }
+
+    SA_print(SA, str, len);
 
     /* prefix doubling
      * SA_l, count_l, rank_l are ready before each iteration
@@ -190,21 +203,18 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
                 SA2[r++] = SA[_r] - l;
             }
         }
-        for (r = 0; r < len; ++r) {
-            printf("%d ", SA2[r]);
-        }
-        printf("\n");
+        SA_print(SA2, str, len);
 
         /*
          * get SA_2l
          * now SA[] is used to store SA_2l[]
-         */
-        for (r = 0; r < len; ++r) {
+        for (r = len - 1; r >= 0; --r) {
+            printf("SA2: %d, rank: %d count: %d\n", SA2[r], rank[SA2[r]], count[rank[SA2[r]]]);
             SA[--count[rank[SA2[r]]]] = SA2[r];
         }
+         */
 
-        SA_print(sa);
-        exit(0);
+        SA_print(SA, str, len);
 
         /*
          * get rank_l:2l
