@@ -20,7 +20,7 @@
 
 struct t_suffix_array {
     int *SA; /* suffix array */
-    int *LCP; /* longest common prefix array */
+    int *LCP; /* LCP[i] = lenght of LCP of S[i] and S[i-1] */
     int size; /* size of suffix array */
 
     int len; /* number of slots used */
@@ -29,7 +29,7 @@ struct t_suffix_array {
 };
 
 /* buffer used in counting sort, one buffer per thread */
-struct t_sa_cntsort_buf {
+struct t_sa_buf {
     /* index: rank
      * count[r] means the number of occurrence of rank r */
     int *count;
@@ -84,10 +84,10 @@ SA_init(struct t_suffix_array *sa, const char *str, int len, int vcb_size)
 }
 
 int
-SA_create_cntsort_buf(struct t_suffix_array *sa, struct t_sa_cntsort_buf **p_buf)
+SA_create_cntsort_buf(struct t_suffix_array *sa, struct t_sa_buf **p_buf)
 {
-    struct t_sa_cntsort_buf *buf = NULL;
-    size_t memsz = sizeof(struct t_sa_cntsort_buf) + 5 * sa->size * sizeof(int);
+    struct t_sa_buf *buf = NULL;
+    size_t memsz = sizeof(struct t_sa_buf) + 5 * sa->size * sizeof(int);
 
     buf = calloc(1, memsz);
     if (buf == NULL) {
@@ -105,7 +105,7 @@ SA_create_cntsort_buf(struct t_suffix_array *sa, struct t_sa_cntsort_buf **p_buf
 }
 
 static int
-SA_init_cntsort_buf(struct t_sa_cntsort_buf *buf)
+SA_init_cntsort_buf(struct t_sa_buf *buf)
 {
     memset(buf + 1, 0, buf->size);
 }
@@ -166,7 +166,7 @@ swap_pointer(int **p_p1, int **p_p2)
 }
 
 int
-SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
+SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
 {
     int *SA = sa->SA;
     int *count = buf->count;
@@ -292,13 +292,43 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
 }
 
 int
-SA_create_lcp(struct t_suffix_array *sa)
+SA_create_lcp(struct t_suffix_array *sa, struct t_sa_buf *buf)
 {
-    
+    int *LCP = sa->LCP;
+    int *SA = sa->SA;
+    int *rank = buf->rank;
+    int len = sa->len;
+    const char *str = sa->str;
+
+    int i = 0, r = 0, lcp = 0;
+
+    for (r = 0; r < len; ++r) {
+        rank[SA[r]] = r;
+    }
+
+    /* before each iteration, lcp is set to the length
+     * of longest common prefix of suffix (i-1) and SA[rank[i-1]-1]
+     */
+    for (i = 0; i < len; ++i) {
+        if (rank[i] != 0) {
+            int j = SA[rank[i] - 1];
+
+            if (lcp != 0) {
+                lcp -= 1;
+            }
+            while (str[i + lcp] == str[j + lcp]) {
+                lcp += 1;
+            }
+            LCP[i] = lcp;
+        }
+    }
+    LCP[0] = 0;
+
+    return 0;
 }
 
 void
-SA_free_cntsort_buf(struct t_sa_cntsort_buf **p_buf)
+SA_free_cntsort_buf(struct t_sa_buf **p_buf)
 {
     if (p_buf == NULL) {
         return;
@@ -383,7 +413,7 @@ main(int argc, char **argv)
 {
     int err = 0;
     struct t_suffix_array *sa = NULL;
-    struct t_sa_cntsort_buf *buf = NULL;
+    struct t_sa_buf *buf = NULL;
 
     err = SA_new(&sa, MAX_LEN);
     assert(err == 0);
