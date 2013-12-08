@@ -111,6 +111,27 @@ SA_init_cntsort_buf(struct t_sa_cntsort_buf *buf)
 }
 
 void
+SA_print_rank(const char *id, int *rank, const char *str, int len)
+{
+    int j = 0, i = 0;
+
+    printf("\n%s:\n", id);
+    for (i = 0; i < len; ++i) {
+        printf("%d:\t", rank[i]);
+        for (j = i; j < len; ++j) {
+            if (str[j] == '\n') {
+                printf("*");
+            } else if (str[j] == '\001') {
+                printf("+");
+            } else {
+                printf("%c", str[j]);
+            }
+        }
+        printf("\n");
+    }
+}
+
+void
 SA_print_sa(const char *id, int *SA, const char *str, int len)
 {
     int r = 0, i = 0;
@@ -125,7 +146,9 @@ SA_print_sa(const char *id, int *SA, const char *str, int len)
     for (r = 0; r < len; ++r) {
         for (i = SA[r]; i < len; ++i) {
             if (str[i] == '\n') {
-                printf("[\\n]");
+                printf("*");
+            } else if (str[i] == '\001') {
+                printf("+");
             } else {
                 printf("%c", str[i]);
             }
@@ -158,7 +181,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
 
     SA_init_cntsort_buf(buf);
 
-    printf("%d: %s\n", len, str);
+    /* printf("%d: %s\n", len, str); */
 
     /*
      * initialize SA[] and rank[] for l = 1
@@ -182,7 +205,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
         count[r] += count[r - 1];
     }
 
-    SA_print_sa("SA", SA, str, len);
+    /* SA_print_sa("SA", SA, str, len); */
 
     /* prefix doubling
      * SA_l, count_l, rank_l are ready before each iteration
@@ -190,7 +213,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
     for (l = 1; l < len; l <<= 1) {
         int _r = 0;
 
-        printf("\n\n===== iteration %d =====\n", l);
+        /* printf("\n\n===== iteration %d =====\n", l); */
 
         /*
          * get SA_l:2l
@@ -203,7 +226,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
                 SA2[r++] = SA[_r] - l;
             }
         }
-        SA_print_sa("SA2", SA2, str, len);
+        /* SA_print_sa("SA2", SA2, str, len); */
 
         /*
          * get SA_2l
@@ -213,7 +236,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
             SA[--count[rank[SA2[r]]]] = SA2[r];
         }
 
-        SA_print_sa("SA", SA, str, len);
+        /* SA_print_sa("SA", SA, str, len); */
 
         /*
          * get rank_l:2l
@@ -223,7 +246,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
         }
         r = 1;
         rank2[SA2[l]] = r;
-        for (; _r < len; ++_r) {
+        for (_r = l + 1; _r < len; ++_r) {
             int i_cur = SA2[_r];
             int i_pre = SA2[_r - 1];
             if (rank[i_cur + l] != rank[i_pre + l]) {
@@ -231,6 +254,8 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
             }
             rank2[i_cur] = r;
         }
+
+        /* SA_print_rank("rank2", rank2, str, len); */
 
         /*
          * get rank_2l
@@ -248,16 +273,20 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
         }
         swap_pointer(&rank, &rank_);
 
+        /* SA_print_rank("rank2l", rank, str, len); */
+
         /*
          * get the count array for S_2l
          */
+        memset(count, 0, len * sizeof(int));
         for (i = 0; i < len; ++i) {
             count[rank[i]] += 1;
         }
-        for (r = 0; r < len; ++r) {
+        for (r = 1; r < len; ++r) {
             count[r] += count[r - 1];
         }
     }
+    /* SA_print_sa("SA", SA, str, len); */
 
     return 0;
 }
