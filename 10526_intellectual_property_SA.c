@@ -342,7 +342,7 @@ SA_create_lcp(struct t_suffix_array *sa, struct t_sa_buf *buf)
             while (str[i + lcp] == str[j + lcp]) {
                 lcp += 1;
             }
-            LCP[i] = lcp;
+            LCP[rank[i]] = lcp;
         }
     }
     LCP[0] = 0;
