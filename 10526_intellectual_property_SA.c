@@ -144,6 +144,7 @@ SA_print_sa(const char *id, int *SA, const char *str, int len)
     }
     printf("\n");
     for (r = 0; r < len; ++r) {
+        printf("%d:\t", r);
         for (i = SA[r]; i < len; ++i) {
             if (str[i] == '\n') {
                 printf("*");
@@ -155,6 +156,8 @@ SA_print_sa(const char *id, int *SA, const char *str, int len)
         }
         printf("\n");
     }
+
+    printf("--------------------------------------------------\n");
 }
 
 static void
@@ -286,9 +289,29 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
             count[r] += count[r - 1];
         }
     }
-    /* SA_print_sa("SA", SA, str, len); */
 
     return 0;
+}
+
+static void
+SA_print_lcp(struct t_suffix_array *sa)
+{
+    int r = 0, i = 0;
+    const char *str = sa->str;
+
+    for (r = 0; r < sa->len; ++r) {
+        printf("%d:\t", sa->LCP[r]);
+        for (i = sa->SA[r]; i < sa->len; ++i) {
+            if (str[i] == '\n') {
+                printf("*");
+            } else if (str[i] == '\001') {
+                printf("+");
+            } else {
+                printf("%c", str[i]);
+            }
+        }
+        printf("\n");
+    }
 }
 
 int
@@ -424,6 +447,10 @@ main(int argc, char **argv)
         /* print_code(); */
         SA_init(sa, str, len, vcb_size);
         SA_create_sa_cntsort(sa, buf);
+        SA_create_lcp(sa, buf);
+
+        SA_print_sa("SA", sa->SA, sa->str, sa->len);
+        SA_print_lcp(sa);
         printf("=======\n");
     }
 
