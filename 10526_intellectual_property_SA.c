@@ -372,10 +372,31 @@ SA_free(struct t_suffix_array **p_sa)
 
 /* ====================================================================== */
 
+struct t_match {
+    int len;
+    int pos;
+};
+
 char str[MAX_LEN];
 int TDP_len, len;
 int ncase, nfrags;
 const int vcb_size = 128;
+
+int flag[MAX_LINE_LEN];
+struct t_match[MAX_LINE_LEN];
+int nmatchs;
+
+int
+match_cmp(const void *_m1, const void *_m2)
+{
+    struct t_match *m1 = (struct t_match *)_m1;
+    struct t_match *m2 = (struct t_match *)_m2;
+    if (m1->len != m2->len) {
+        return m2->len - m1->len;
+    } else {
+        return m1->pos - m2->pos;
+    }
+}
 
 /*
  * return 1 if number of fragments = 0, 0 otherwise
@@ -431,6 +452,15 @@ print_code(void)
     putchar('\n');
 }
 
+void
+get_matchs(struct t_suffix_array *sa)
+{
+    int *SA = sa->SA;
+    int *LCP = sa->LCP;
+
+    int r = 0;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -449,6 +479,7 @@ main(int argc, char **argv)
         SA_create_sa_cntsort(sa, buf);
         SA_create_lcp(sa, buf);
 
+        nmatchs = 0;
         SA_print_sa("SA", sa->SA, sa->str, sa->len);
         SA_print_lcp(sa);
         printf("=======\n");
