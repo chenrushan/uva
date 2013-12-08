@@ -39,15 +39,17 @@ struct t_sa_cntsort_buf {
      * SA2[r] means the suffix at rank r */
     int *SA2;
 
-    /* index: string position
+    /* two rank buffer
+     * index: string position
      * rank[i] means the rank of suffix i */
     int *rank;
+    int *rank_;
 
     /* rank for S_l:2l
      * index: string position */
     int *rank2;
 
-    /* size of the above 4 buf */
+    /* size of the above 5 buf */
     int size;
 };
 
@@ -85,17 +87,18 @@ int
 SA_create_cntsort_buf(struct t_suffix_array *sa, struct t_sa_cntsort_buf **p_buf)
 {
     struct t_sa_cntsort_buf *buf = NULL;
-    size_t memsz = sizeof(struct t_sa_cntsort_buf) + 4 * sa->size * sizeof(int);
+    size_t memsz = sizeof(struct t_sa_cntsort_buf) + 5 * sa->size * sizeof(int);
 
     buf = calloc(1, memsz);
     if (buf == NULL) {
         return -1;
     }
-    buf->size = 4 * sa->size * sizeof(int);
+    buf->size = 5 * sa->size * sizeof(int);
     buf->count = (int *)(buf + 1);
     buf->SA2 = buf->count + sa->size;
     buf->rank = buf->SA2 + sa->size;
-    buf->rank2 = buf->rank + sa->size;
+    buf->rank_ = buf->rank + sa->size;
+    buf->rank2 = buf->rank_ + sa->size;
 
     *p_buf = buf;
     return 0;
@@ -129,6 +132,14 @@ SA_print(struct t_suffix_array *sa)
     }
 }
 
+static void
+swap_pointer(int **p_p1, int **p_p2)
+{
+    int *_p = *p_p1;
+    *p_p1 = *p_p2;
+    *p_p2 = _p;
+}
+
 int
 SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
 {
@@ -136,6 +147,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
     int *count = buf->count;
     int *SA2 = buf->SA2;
     int *rank = buf->rank;
+    int *rank_ = buf->rank_;
     int *rank2 = buf->rank2;
     int len = sa->len;
     const char *str = sa->str;
@@ -159,7 +171,84 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_cntsort_buf *buf)
         SA[--count[rank[i]]] = i;
     }
 
-    /* SA_print(sa); */
+    /* prefix doubling
+     * SA_l, count_l, rank_l are ready before each iteration
+     */
+    for (l = 1; l < len; l <<= 1) {
+        int _r = 0;
+
+        printf("===== iteration %d =====\n", l);
+
+        /*
+         * get SA_l:2l
+         */
+        for (r = 0, i = len - 1; i >= len - l; --i) {
+            SA2[r++] = i;
+        }
+        for (_r = 0; _r < len; ++_r) {
+            if (SA[_r] >= l) {
+                SA2[r++] = SA[_r] - l;
+            }
+        }
+        for (r = 0; r < len; ++r) {
+            printf("%d ", SA2[r]);
+        }
+        printf("\n");
+
+        /*
+         * get SA_2l
+         * now SA[] is used to store SA_2l[]
+         */
+        for (r = 0; r < len; ++r) {
+            SA[--count[rank[SA2[r]]]] = SA2[r];
+        }
+
+        SA_print(sa);
+        exit(0);
+
+        /*
+         * get rank_l:2l
+         */
+        for (_r = 0; _r < l; ++_r) {
+            rank2[SA2[_r]] = 0;
+        }
+        r = 1;
+        rank2[SA2[l]] = r;
+        for (; _r < len; ++_r) {
+            int i_cur = SA2[_r];
+            int i_pre = SA2[_r - 1];
+            if (rank[i_cur + l] != rank[i_pre + l]) {
+                r += 1;
+            }
+            rank2[i_cur] = r;
+        }
+
+        /*
+         * get rank_2l
+         * now rank[] is used to store rank_2l[]
+         */
+        r = 0;
+        rank_[SA[0]] = 0;
+        for (_r = 1; _r < len; ++_r) {
+            int i_cur = SA[_r];
+            int i_pre = SA[_r - 1];
+            if (rank[i_cur] != rank[i_pre] || rank2[i_cur] != rank2[i_pre]) {
+                r += 1;
+            }
+            rank_[i_cur] = r;
+        }
+        swap_pointer(&rank, &rank_);
+
+        /*
+         * get the count array for S_2l
+         */
+        for (i = 0; i < len; ++i) {
+            count[rank[i]] += 1;
+        }
+        for (r = 0; r < len; ++r) {
+            count[r] += count[r - 1];
+        }
+    }
 
     return 0;
 }
