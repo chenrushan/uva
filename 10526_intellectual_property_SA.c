@@ -383,7 +383,7 @@ int ncase, nfrags;
 const int vcb_size = 128;
 
 int flag[MAX_LINE_LEN];
-struct t_match[MAX_LINE_LEN];
+struct t_match matchs[MAX_LINE_LEN];
 int nmatchs;
 
 int
@@ -457,8 +457,54 @@ get_matchs(struct t_suffix_array *sa)
 {
     int *SA = sa->SA;
     int *LCP = sa->LCP;
+    int r = 0, i = 0, j = 0;
 
-    int r = 0;
+    nmatchs = 0;
+
+    for (r = 1; r < sa->len; ++r) {
+        i = sa->SA[r];
+        if (i < TDP_len + 1) {
+            continue;
+        }
+
+        /* consider suffix at rank (r - 1) */
+        j = sa->SA[r - 1];
+        if (j < TDP_len && sa->LCP[r] != 0) {
+            matchs[nmatchs].len = sa->LCP[r];
+            matchs[nmatchs].pos = j;
+            nmatchs += 1;
+        }
+
+        /* consider suffix at rank (r + 1) */
+        if (r < sa->len - 1) {
+            j = sa->SA[r + 1];
+            if (j < TDP_len && sa->LCP[r + 1] != 0) {
+                matchs[nmatchs].len = sa->LCP[r + 1];
+                matchs[nmatchs].pos = j;
+                nmatchs += 1;
+            }
+        }
+    }
+}
+
+void
+print_match(void)
+{
+    int i = 0;
+
+    for (i = 0; i < nmatchs; ++i) {
+        printf("(%d, %d):\t", matchs[i].pos, matchs[i].len);
+        int j = 0;
+        for (j = 0; j < matchs[i].len; ++j) {
+            char c = str[matchs[i].pos + j];
+            if (c == '\n') {
+                putchar('*');
+            } else {
+                putchar(c);
+            }
+        }
+        putchar('\n');
+    }
 }
 
 int
@@ -474,15 +520,22 @@ main(int argc, char **argv)
     assert(err == 0);
 
     while (! read_code()) {
+        ncase += 1;
+
         /* print_code(); */
+
         SA_init(sa, str, len, vcb_size);
         SA_create_sa_cntsort(sa, buf);
         SA_create_lcp(sa, buf);
 
-        nmatchs = 0;
-        SA_print_sa("SA", sa->SA, sa->str, sa->len);
-        SA_print_lcp(sa);
-        printf("=======\n");
+        /* SA_print_sa("SA", sa->SA, sa->str, sa->len); */
+        /* SA_print_lcp(sa); */
+
+        get_matchs(sa);
+        qsort(matchs, nmatchs, sizeof(*matchs), match_cmp);
+
+        /* print_match(); */
+
     }
 
     SA_free_cntsort_buf(&buf);
