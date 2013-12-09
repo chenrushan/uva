@@ -406,6 +406,8 @@ match_cmp(const void *_m1, const void *_m2)
 int
 read_code(void)
 {
+    int is_TDP_end = 0;
+
     TDP_len = len = 0;
 
     scanf("%d\n", &nfrags);
@@ -419,13 +421,15 @@ read_code(void)
         fgets(str + len, MAX_LEN - len, stdin);
 
         if (str[len] == 'E' && str[len + 1] == 'N') {
-            if (! strcmp(str + len, "END TDP CODEBASE\n")) {
+            if (is_TDP_end == 0 && ! strcmp(str + len, "END TDP CODEBASE\n")) {
                 /* read "BEGIN JCN" */
                 fgets(str + len, MAX_LEN - len, stdin);
                 TDP_len = len;
                 str[len++] = '\001';
+                is_TDP_end = 1;
                 continue;
-            } else if (! strcmp(str + len, "END JCN CODEBASE\n")) {
+            } else if (! strcmp(str + len, "END JCN CODEBASE\n") &&
+                       is_TDP_end == 1) {
                 break;
             }
         }
@@ -519,7 +523,7 @@ print_match(void)
 {
     int i = 0, n = 0;
 
-    memset(flag, 0, len * sizeof(*flag));
+    memset(flag, 0, sizeof(flag));
 
     for (i = 0; i < nmatchs && n < nfrags; ++i) {
         /* check if this match is contained within another match */
@@ -540,13 +544,12 @@ print_match(void)
         }
         putchar('\n');
     }
-    putchar('\n');
 }
 
 int
 main(int argc, char **argv)
 {
-    int err = 0;
+    int err = 0, is_first = 1;
     struct t_suffix_array *sa = NULL;
     struct t_sa_buf *buf = NULL;
 
@@ -557,6 +560,9 @@ main(int argc, char **argv)
 
     while (! read_code()) {
         ncase += 1;
+        if (! is_first) {
+            printf("\n");
+        }
         printf("CASE %d\n", ncase);
 
         /* print_code(); */
@@ -570,6 +576,7 @@ main(int argc, char **argv)
 
         get_matchs(sa);
         print_match();
+        is_first = 0;
     }
 
     SA_free_cntsort_buf(&buf);
