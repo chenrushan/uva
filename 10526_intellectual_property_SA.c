@@ -12,6 +12,7 @@
 
 #define MAX_LEN 100010
 #define MAX_LINE_LEN 50010
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 /* ====================================================================== */
 /*                      suffix array implementation                       */
@@ -375,7 +376,6 @@ SA_free(struct t_suffix_array **p_sa)
 struct t_match {
     int len;
     int pos;
-    int JCN_pos;
 };
 
 char str[MAX_LEN];
@@ -395,7 +395,7 @@ match_cmp(const void *_m1, const void *_m2)
     if (m1->len != m2->len) {
         return m2->len - m1->len;
     } else {
-        return m1->JCN_pos - m2->JCN_pos;
+        return m1->pos - m2->pos;
     }
 }
 
@@ -460,34 +460,58 @@ get_matchs(struct t_suffix_array *sa)
     int *LCP = sa->LCP;
     int r = 0, i = 0, j = 0;
 
-    nmatchs = 0;
+    memset(matchs, 0, sizeof(matchs));
 
-    for (r = 1; r < sa->len; ++r) {
-        i = sa->SA[r];
-        if (i < TDP_len + 1) {
+    /* downward match, O(len)
+     * the code snippet within the inner loop executes
+     * at most (len - TDP_len) times */
+    for (r = 0; r < len; ++r) {
+        /* check if this suffix belongs to TDP */
+        if (SA[r] >= TDP_len) {
             continue;
         }
 
-        /* consider suffix at rank (r - 1) */
-        j = sa->SA[r - 1];
-        if (j < TDP_len && sa->LCP[r] != 0) {
-            matchs[nmatchs].len = sa->LCP[r];
-            matchs[nmatchs].pos = j;
-            matchs[nmatchs].JCN_pos = i - TDP_len - 1;
-            nmatchs += 1;
+        int _r = 0, lcp = MAX_LEN;
+        for (_r = r + 1; _r < len && SA[_r] > TDP_len; ++_r) {
+            /* get lcp between SA[r] and SA[_r] */
+            lcp = MIN(lcp, LCP[_r]);
+            if (lcp == 0) {
+                break;
+            }
+            j = SA[_r] - TDP_len - 1;
+            matchs[j].pos = j;
+            matchs[j].len = lcp;
         }
+    }
 
-        /* consider suffix at rank (r + 1) */
-        if (r < sa->len - 1) {
-            j = sa->SA[r + 1];
-            if (j < TDP_len && sa->LCP[r + 1] != 0) {
-                matchs[nmatchs].len = sa->LCP[r + 1];
-                matchs[nmatchs].pos = j;
-                matchs[nmatchs].JCN_pos = i - TDP_len - 1;
-                nmatchs += 1;
+    /* upward match and update @matchs */
+    for (r = 1; r < len; ++r) {
+        if (SA[r] >= TDP_len) {
+            continue;
+        }
+        int _r = 0, lcp = MAX_LEN;
+        for (_r = r; _r >= 1 && SA[_r - 1] > TDP_len; --_r) {
+            lcp = MIN(lcp, LCP[_r]);
+            if (lcp == 0) {
+                break;
+            }
+            j = SA[_r - 1] - TDP_len - 1;
+            if (matchs[j].len < lcp) {
+                matchs[j].pos = j;
+                matchs[j].len = lcp;
             }
         }
     }
+
+    /* compress matchs array */
+    nmatchs = 0;
+    for (i = 0; i < len - TDP_len - 1; ++i) {
+        if (matchs[i].len != 0) {
+            matchs[nmatchs++] = matchs[i];
+        }
+    }
+
+    qsort(matchs, nmatchs, sizeof(*matchs), match_cmp);
 }
 
 void
@@ -497,21 +521,21 @@ print_match(void)
 
     memset(flag, 0, len * sizeof(*flag));
 
-    for (i = 0; i < nmatchs ; ++i) {
+    for (i = 0; i < nmatchs && n < nfrags; ++i) {
         /* check if this match is contained within another match */
-        // int sum = matchs[i].pos + matchs[i].len;
-        // if (flag[sum] == 1) {
-        //     continue;
-        // }
-        // flag[sum] = 1;
+        int sum = matchs[i].pos + matchs[i].len;
+        if (flag[sum] == 1) {
+            continue;
+        }
+        flag[sum] = 1;
 
         n += 1;
 
         printf("INFRINGING SEGMENT %d LENGTH %d POSITION %d\n",
-               n, matchs[i].len, matchs[i].JCN_pos);
+               n, matchs[i].len, matchs[i].pos);
         int j = 0;
         for (j = 0; j < matchs[i].len; ++j) {
-            char c = str[matchs[i].pos + j];
+            char c = str[TDP_len + 1 + matchs[i].pos + j];
             putchar(c);
         }
         putchar('\n');
@@ -535,19 +559,16 @@ main(int argc, char **argv)
         ncase += 1;
         printf("CASE %d\n", ncase);
 
-        printf("TDP_len: %d\n", TDP_len);
-
         /* print_code(); */
 
         SA_init(sa, str, len, vcb_size);
         SA_create_sa_cntsort(sa, buf);
         SA_create_lcp(sa, buf);
 
-        SA_print_sa("SA", sa->SA, sa->str, sa->len);
+        /* SA_print_sa("SA", sa->SA, sa->str, sa->len); */
         /* SA_print_lcp(sa); */
 
         get_matchs(sa);
-        qsort(matchs, nmatchs, sizeof(*matchs), match_cmp);
         print_match();
     }
 
