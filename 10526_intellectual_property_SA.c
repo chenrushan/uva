@@ -1,7 +1,6 @@
 /* 
  * Author: Chen Rushan
  * E-Mail: chenrsster@gmail.com
- * Last modified: 2009 Jul 04 12:48:26
  */
 
 #include <stdio.h>
