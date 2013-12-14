@@ -31,17 +31,17 @@ struct t_suffix_array {
 /* buffer used in counting sort, one buffer per thread */
 struct t_sa_buf {
     /* index: rank
-     * count[r] means the number of occurrence of rank r */
+     * count[r] is the number of occurrence of rank <= r */
     int *count;
 
     /* SA for S_l:2l
      * index: rank
-     * SA2[r] means the suffix at rank r */
+     * SA2[r] is the suffix at rank r */
     int *SA2;
 
     /* two rank buffer
      * index: string position
-     * rank[i] means the rank of suffix i */
+     * rank[i] is the rank of suffix i */
     int *rank;
     int *rank_;
 
