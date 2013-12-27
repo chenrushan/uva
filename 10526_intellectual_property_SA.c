@@ -1,7 +1,6 @@
 /* 
  * Author: Chen Rushan
  * E-Mail: chenrsster@gmail.com
- * Last modified: 2009 Jul 04 12:48:26
  */
 
 #include <stdio.h>
@@ -32,17 +31,17 @@ struct t_suffix_array {
 /* buffer used in counting sort, one buffer per thread */
 struct t_sa_buf {
     /* index: rank
-     * count[r] means the number of occurrence of rank r */
+     * count[r] is the number of occurrence of rank <= r */
     int *count;
 
     /* SA for S_l:2l
      * index: rank
-     * SA2[r] means the suffix at rank r */
+     * SA2[r] is the suffix at rank r */
     int *SA2;
 
     /* two rank buffer
      * index: string position
-     * rank[i] means the rank of suffix i */
+     * rank[i] is the rank of suffix i */
     int *rank;
     int *rank_;
 
@@ -185,8 +184,6 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
 
     SA_init_cntsort_buf(buf);
 
-    /* printf("%d: %s\n", len, str); */
-
     /*
      * initialize SA[] and rank[] for l = 1
      */
@@ -209,15 +206,11 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
         count[r] += count[r - 1];
     }
 
-    /* SA_print_sa("SA", SA, str, len); */
-
     /* prefix doubling
      * SA_l, count_l, rank_l are ready before each iteration
      */
     for (l = 1; l < len; l <<= 1) {
         int _r = 0;
-
-        /* printf("\n\n===== iteration %d =====\n", l); */
 
         /*
          * get SA_l:2l
@@ -230,7 +223,6 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
                 SA2[r++] = SA[_r] - l;
             }
         }
-        /* SA_print_sa("SA2", SA2, str, len); */
 
         /*
          * get SA_2l
@@ -239,8 +231,6 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
         for (r = len - 1; r >= 0; --r) {
             SA[--count[rank[SA2[r]]]] = SA2[r];
         }
-
-        /* SA_print_sa("SA", SA, str, len); */
 
         /*
          * get rank_l:2l
@@ -259,8 +249,6 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
             rank2[i_cur] = r;
         }
 
-        /* SA_print_rank("rank2", rank2, str, len); */
-
         /*
          * get rank_2l
          * now rank[] is used to store rank_2l[]
@@ -276,8 +264,6 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
             rank_[i_cur] = r;
         }
         swap_pointer(&rank, &rank_);
-
-        /* SA_print_rank("rank2l", rank, str, len); */
 
         /*
          * get the count array for S_2l
