@@ -111,7 +111,7 @@ SA_init_cntsort_buf(struct t_sa_buf *buf)
 }
 
 void
-SA_print_rank(const char *id, int *rank, const char *str, int len)
+SA_printr_ank(const char *id, int *rank, const char *str, int len)
 {
     int j = 0, i = 0;
 
@@ -210,7 +210,7 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
      * SA_l, count_l, rank_l are ready before each iteration
      */
     for (l = 1; l < len; l <<= 1) {
-        int _r = 0;
+        int r_ = 0;
 
         /*
          * get SA_l:2l
@@ -218,9 +218,9 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
         for (r = 0, i = len - 1; i >= len - l; --i) {
             SA2[r++] = i;
         }
-        for (_r = 0; _r < len; ++_r) {
-            if (SA[_r] >= l) {
-                SA2[r++] = SA[_r] - l;
+        for (r_ = 0; r_ < len; ++r_) {
+            if (SA[r_] >= l) {
+                SA2[r++] = SA[r_] - l;
             }
         }
 
@@ -235,14 +235,14 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
         /*
          * get rank_l:2l
          */
-        for (_r = 0; _r < l; ++_r) {
-            rank2[SA2[_r]] = 0;
+        for (r_ = 0; r_ < l; ++r_) {
+            rank2[SA2[r_]] = 0;
         }
         r = 1;
         rank2[SA2[l]] = r;
-        for (_r = l + 1; _r < len; ++_r) {
-            int i_cur = SA2[_r];
-            int i_pre = SA2[_r - 1];
+        for (r_ = l + 1; r_ < len; ++r_) {
+            int i_cur = SA2[r_];
+            int i_pre = SA2[r_ - 1];
             if (rank[i_cur + l] != rank[i_pre + l]) {
                 r += 1;
             }
@@ -255,9 +255,9 @@ SA_create_sa_cntsort(struct t_suffix_array *sa, struct t_sa_buf *buf)
          */
         r = 0;
         rank_[SA[0]] = 0;
-        for (_r = 1; _r < len; ++_r) {
-            int i_cur = SA[_r];
-            int i_pre = SA[_r - 1];
+        for (r_ = 1; r_ < len; ++r_) {
+            int i_cur = SA[r_];
+            int i_pre = SA[r_ - 1];
             if (rank[i_cur] != rank[i_pre] || rank2[i_cur] != rank2[i_pre]) {
                 r += 1;
             }
@@ -461,14 +461,14 @@ get_matchs(struct t_suffix_array *sa)
             continue;
         }
 
-        int _r = 0, lcp = MAX_LEN;
-        for (_r = r + 1; _r < len && SA[_r] > TDP_len; ++_r) {
-            /* get lcp between SA[r] and SA[_r] */
-            lcp = MIN(lcp, LCP[_r]);
+        int r_ = 0, lcp = MAX_LEN;
+        for (r_ = r + 1; r_ < len && SA[r_] > TDP_len; ++r_) {
+            /* get lcp between SA[r] and SA[r_] */
+            lcp = MIN(lcp, LCP[r_]);
             if (lcp == 0) {
                 break;
             }
-            j = SA[_r] - TDP_len - 1;
+            j = SA[r_] - TDP_len - 1;
             matchs[j].pos = j;
             matchs[j].len = lcp;
         }
@@ -479,13 +479,13 @@ get_matchs(struct t_suffix_array *sa)
         if (SA[r] >= TDP_len) {
             continue;
         }
-        int _r = 0, lcp = MAX_LEN;
-        for (_r = r; _r >= 1 && SA[_r - 1] > TDP_len; --_r) {
-            lcp = MIN(lcp, LCP[_r]);
+        int r_ = 0, lcp = MAX_LEN;
+        for (r_ = r; r_ >= 1 && SA[r_ - 1] > TDP_len; --r_) {
+            lcp = MIN(lcp, LCP[r_]);
             if (lcp == 0) {
                 break;
             }
-            j = SA[_r - 1] - TDP_len - 1;
+            j = SA[r_ - 1] - TDP_len - 1;
             if (matchs[j].len < lcp) {
                 matchs[j].pos = j;
                 matchs[j].len = lcp;
