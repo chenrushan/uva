@@ -96,8 +96,13 @@ sort()
     */
 }
 
+struct t_position {
+    int beg;
+    int min;
+};
+
 int max_len[MAX_ELES][MAX_VALUE];
-int from[MAX_ELES][MAX_VALUE];
+struct t_position from[MAX_ELES][MAX_VALUE];
 
 void
 fill(int beg, int min)
@@ -107,10 +112,10 @@ fill(int beg, int min)
     int w = 0, i = 0;
 
     /* find the first one smaller than min for the same W */
-    w = WI[beg][0];
+    w = WI[order[beg]][0];
     for (i = beg; i < nWIs; ++i) {
-        if (WI[i][0] == w) {
-            if (WI[i][1] < min) {
+        if (WI[order[i]][0] == w) {
+            if (WI[order[i]][1] < min) {
                 first = i;
                 break;
             }
@@ -118,11 +123,10 @@ fill(int beg, int min)
             break;
         }
     }
-    printf("first: %d\n", first);
 
     /* get index for next weight */
     for (; i < nWIs; ++i) {
-        if (WI[i][0] != w) {
+        if (WI[order[i]][0] != w) {
             break;
         }
     }
@@ -130,9 +134,17 @@ fill(int beg, int min)
 
     int len = 0;
     if (first != -1) {
-        len = 1 + max_len[next_w][WI[first][1]];
+        len = 1 + max_len[next_w][WI[order[first]][1]];
     }
-    max_len[beg][min] = MAX(len, max_len[next_w][min]);
+    if (len > max_len[next_w][min]) {
+        max_len[beg][min] = len;
+        from[beg][min].beg = next_w;
+        from[beg][min].min = WI[order[first]][1];
+    } else {
+        max_len[beg][min] = max_len[next_w][min];
+        from[beg][min].beg = next_w;
+        from[beg][min].min = min;
+    }
 }
 
 void
@@ -140,7 +152,7 @@ DP()
 {
     int i = 0, j = 0;
     for (i = nWIs - 1; i >= 0; --i) {
-        for (j = 0; j < maxI; ++j) {
+        for (j = 0; j <= maxI; ++j) {
             fill(i, j);
         }
     }
@@ -163,6 +175,17 @@ main(int argc, char **argv)
     sort();
     DP();
     printf("%d\n", max_len[0][maxI]);
+
+    int cur_beg = 0, cur_min = maxI;
+
+    for (i = 0; i < nWIs; ++i) {
+        if (from[cur_beg][cur_min].min != cur_min) {
+            printf("%d %d\n", WI[order[cur_beg]][0], WI[order[cur_beg]][1]);
+        }
+        printf("%d %d\n", WI[order[cur_beg]][0], WI[order[cur_beg]][1]);
+        cur_beg = from[cur_beg][cur_min].beg;
+        cur_min = from[cur_beg][cur_min].min;
+    }
 
     return 0;
 }
