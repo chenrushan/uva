@@ -1,48 +1,13 @@
 /* 
  * Author: Chen Rushan
  * E-Mail: juscodit@gmail.com
+ * 10131
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-
-/*
-int len(WI[0:N][2], min)
-{
-    int next_w = 0;
-    int first = -1;
-
-    // find the first one smaller than min for the same W
-    W = WI[0][0];
-    for (i = 0; i < N; ++i) {
-        if (WI[i][0] == W) {
-            if (WI[i][1] < min) {
-                first = i;
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-    // get index for next weight
-    for (; i < N; ++i) {
-        if (WI[i][0] != W) {
-            break;
-        }
-    }
-    next_w = i;
-
-    int len1 = 0;
-    if (first != -1) {
-        len1 = 1 + len(WI[next_w:N][2], WI[first][1]);
-    }
-    len2 = len(WI[next_w:N][2], min);
-
-    return max(len1, len2);
-}
-*/
 
 #define MAX(i, j) ((i) > (j) ? (i) : (j))
 #define MAX_ELES 1002
@@ -178,13 +143,14 @@ main(int argc, char **argv)
 
     int cur_beg = 0, cur_min = maxI;
 
-    for (i = 0; i < nWIs; ++i) {
+    while (cur_beg < nWIs) {
         if (from[cur_beg][cur_min].min != cur_min) {
-            printf("%d %d\n", WI[order[cur_beg]][0], WI[order[cur_beg]][1]);
+            printf("%d %d %d\n", order[cur_beg] + 1, WI[order[cur_beg]][0], WI[order[cur_beg]][1]);
         }
-        printf("%d %d\n", WI[order[cur_beg]][0], WI[order[cur_beg]][1]);
-        cur_beg = from[cur_beg][cur_min].beg;
-        cur_min = from[cur_beg][cur_min].min;
+        int cb = from[cur_beg][cur_min].beg;
+        int cm = from[cur_beg][cur_min].min;
+        cur_beg = cb;
+        cur_min = cm;
     }
 
     return 0;
