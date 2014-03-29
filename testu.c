@@ -21,7 +21,7 @@ int offset[MAX_VALUE];
 int old[MAX_ELES], order[MAX_ELES];
 
 void
-setup_offset(int idx)
+setup_offset(int idx, int ord)
 {
     memset(offset, 0, sizeof(offset));
     /* first get count */
@@ -30,12 +30,22 @@ setup_offset(int idx)
         offset[WI[i][idx]] += 1;
     }
     /* turn count to offset */
-    int off = offset[1];
-    offset[0] = 0;
-    for (i = 1; i < MAX_VALUE; ++i) {
-        int t = offset[i];
-        offset[i] = off;
-        off += t;
+    if (ord == 0) {
+        int off = offset[1];
+        offset[0] = 0;
+        for (i = 1; i < MAX_VALUE; ++i) {
+            int t = offset[i];
+            offset[i] = off;
+            off += t;
+        }
+    } else {
+        int off = offset[MAX_VALUE - 1];
+        offset[MAX_VALUE - 1] = 0;
+        for (i = MAX_VALUE - 2; i >= 0; --i) {
+            int t = offset[i];
+            offset[i] = off;
+            off += t;
+        }
     }
 }
 
@@ -44,21 +54,15 @@ sort()
 {
     int i = 0;
 
-    setup_offset(1);
+    setup_offset(1, 1);
     for (i = 0; i < nWIs; ++i) {
         old[offset[WI[i][1]]++] = i;
     }
 
-    setup_offset(0);
+    setup_offset(0, 0);
     for (i = 0; i < nWIs; ++i) {
         order[offset[WI[old[i]][0]]++] = old[i];
     }
-
-    /*
-    for (i = 0; i < nWIs; ++i) {
-        printf("%d %d\n", WI[order[i]][0], WI[order[i]][1]);
-    }
-    */
 }
 
 struct t_position {
@@ -76,7 +80,7 @@ fill(int beg, int min)
     int first = -1;
     int w = 0, i = 0;
 
-    /* find the first one smaller than min for the same W */
+    /* find the first one smaller than min for the same w */
     w = WI[order[beg]][0];
     for (i = beg; i < nWIs; ++i) {
         if (WI[order[i]][0] == w) {
@@ -144,9 +148,19 @@ main(int argc, char **argv)
     int cur_beg = 0, cur_min = maxI;
 
     while (cur_beg < nWIs) {
-        if (from[cur_beg][cur_min].min != cur_min) {
-            printf("%d %d %d\n", order[cur_beg] + 1, WI[order[cur_beg]][0], WI[order[cur_beg]][1]);
+        if (from[cur_beg][cur_min].min < cur_min) {
+            w = WI[order[cur_beg]][0];
+            for (i = cur_beg; i < nWIs; ++i) {
+                if (WI[order[i]][0] != w) {
+                    break;
+                }
+                if (WI[order[i]][1] < cur_min) {
+                    break;
+                }
+            }
+            printf("%d\n", order[i] + 1);
         }
+
         int cb = from[cur_beg][cur_min].beg;
         int cm = from[cur_beg][cur_min].min;
         cur_beg = cb;
