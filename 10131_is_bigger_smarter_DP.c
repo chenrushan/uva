@@ -121,9 +121,17 @@ DP()
 {
     int i = 0, j = 0;
     for (i = nWIs - 1; i >= 0; --i) {
+        /* no need to iterate over all mins */
+        for (j = 0; j < nWIs; ++j) {
+            fill(i, WI[j][1]);
+        }
+        fill(i, maxI);
+
+        /*
         for (j = 0; j <= maxI; ++j) {
             fill(i, j);
         }
+        */
     }
 }
 
