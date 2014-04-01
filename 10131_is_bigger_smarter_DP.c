@@ -73,6 +73,10 @@ struct t_position {
 int max_len[MAX_ELES][MAX_VALUE];
 struct t_position from[MAX_ELES][MAX_VALUE];
 
+/* 
+ * get the longest decreasing sequence from @beg to @nWIs, with all
+ * elements in sequence smaller than @min
+ */
 void
 fill(int beg, int min)
 {
@@ -135,6 +139,51 @@ DP()
     }
 }
 
+int L[MAX_ELES];
+int P[MAX_ELES]; /* parent array, -1 means no parent */
+
+/* 
+ * get the longest decreasing sequence that starts with @beg element
+ */
+void
+fill2(int beg)
+{
+    int i = 0;
+
+    L[beg] = 1;
+    P[beg] = -1;
+
+    for (i = beg + 1; i < nWIs; ++i) {
+        if (WI[order[i]][1] < WI[order[beg]][1]) {
+            int l = 1 + L[i];
+            if (L[beg] < l) {
+                L[beg] = l;
+                P[beg] = i;
+            }
+        }
+    }
+}
+
+void
+DP2()
+{
+    int i = 0, max = 0, idx = 0;
+
+    for (i = nWIs - 1; i >= 0; --i) {
+        fill2(i);
+        if (max < L[i]) {
+            max = L[i];
+            idx = i;
+        }
+    }
+
+    printf("%d\n", max);
+    while (idx != -1) {
+        printf("%d\n", order[idx] + 1);
+        idx = P[idx];
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -150,6 +199,9 @@ main(int argc, char **argv)
     maxI += 1;
 
     sort();
+
+    /* first way of DP
+
     DP();
     printf("%d\n", max_len[0][maxI]);
 
@@ -174,6 +226,9 @@ main(int argc, char **argv)
         cur_beg = cb;
         cur_min = cm;
     }
+    */
+
+    DP2();
 
     return 0;
 }
