@@ -84,7 +84,7 @@ int top; /* top index of @path */
 
 int lowest; /* index of lowest point in pointSet */
 
-const struct Point origin = {0, 0};
+struct Point origin = {0, 0};
 
 /**
  * Return the index of the lowest point in pointSet
@@ -155,7 +155,7 @@ getConvexHull(void)
     }
 
     /* set dist */
-    for (i = 0; i < npoints - 1; ++i) {
+    for (i = 0; i <= top - 1; ++i) {
         dist[i] = pointDist(pointSet + path[i], pointSet + path[i + 1]);
         dist0[i] = pointDist(pointSet + path[i], &origin);
     }
@@ -163,10 +163,17 @@ getConvexHull(void)
     dist0[i] = pointDist(pointSet + path[i], &origin);
     dist0[i + 1] = dist0[0]; /* for efficiency */
 
-    for (i = 0; i < npoints; ++i) {
+    /*
+    for (i = 0; i <= top; ++i) {
         printf("%f ", dist0[i]);
     }
     printf("\n");
+
+    for (i = 0; i <= top; ++i) {
+        printf("%f ", dist[i]);
+    }
+    printf("\n");
+    */
 }
 
 float
@@ -175,19 +182,30 @@ addOrigin(void)
     float sum = 0, min = 0;
     int i = 0;
 
-    for (i = 0; i < npoints; ++i) {
+    for (i = 0; i <= top; ++i) {
         sum += dist[i];
+    }
+
+    /* check if origin already in path */
+    for (i = 0; i <= top; ++i) {
+        if (pointEqual(pointSet + path[i], &origin)) {
+            break;
+        }
+    }
+    if (i != top + 1) {
+        return sum + 2;
     }
 
     min = sum - dist[0] + dist0[0] + dist0[1];
 
-    for (i = 1; i < npoints; ++i) {
-        int v = sum - dist[i] + dist0[i] + dist0[i + 1];
+    for (i = 1; i <= top; ++i) {
+        float v = sum - dist[i] + dist0[i] + dist0[i + 1];
         if (v < min) {
             min = v;
         }
     }
-    return min;
+
+    return min + 2;
 }
 
 int
