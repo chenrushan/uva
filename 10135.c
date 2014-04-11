@@ -25,7 +25,7 @@ struct Point {
 int
 pointOrientation(struct Point *p, struct Point *q, struct Point *r)
 {
-    float v = (r->y - q->y) * (q->x - p->x) - (q->y - p->y) * (r->x - q->x);
+    double v = (r->y - q->y) * (q->x - p->x) - (q->y - p->y) * (r->x - q->x);
     if (v < 0) {
         return -1;
     } else if (v > 0) {
@@ -107,6 +107,7 @@ cmpPoint(const void *p, const void *q)
 {
     int i = *(int *)p, j = *(int *)q;
 
+    /* make the lowest point smallest */
     if (pointEqual(pointSet + i, pointSet + lowest)) {
         return -1;
     }
@@ -114,18 +115,31 @@ cmpPoint(const void *p, const void *q)
         return 1;
     }
 
-    /*
-    printf("orientation of (%.1f, %.1f) and (%.1f, %.1f) is ", pointSet[i].x,
-           pointSet[i].y, pointSet[j].x, pointSet[j].y);
-    int v = pointOrientation(pointSet + i, pointSet + lowest, pointSet + j);
-    if (v > 0) {
-        printf("counterclockwise\n");
-    } else {
-        printf("clockwise\n");
+    /* check orientation, if (i, lowest, j) is not on the same line,
+     * just return orientation, otherwise, check if i is the same as j,
+     * I want to put the same points together so I can easily remove
+     * duplication after sorting */
+    int ori = pointOrientation(pointSet + i, pointSet + lowest, pointSet + j);
+    if (ori != 0) {
+        return ori;
     }
-    */
+    if (pointEqual(pointSet + i, pointSet + j)) {
+        return 0;
+    }
+    return 1;
+}
 
-    return pointOrientation(pointSet + i, pointSet + lowest, pointSet + j);
+void
+removeDuplicate(void)
+{
+    int nps = 0, i = 0;
+
+    for (i = 1; i < npoints; ++i) {
+        if (! pointEqual(pointSet + order[i], pointSet + order[nps])) {
+            order[++nps] = order[i];
+        }
+    }
+    npoints = nps + 1;
 }
 
 /**
@@ -162,18 +176,6 @@ getConvexHull(void)
     dist[i] = pointDist(pointSet + path[i], pointSet + path[0]);
     dist0[i] = pointDist(pointSet + path[i], &origin);
     dist0[i + 1] = dist0[0]; /* for efficiency */
-
-    /*
-    for (i = 0; i <= top; ++i) {
-        printf("%f ", dist0[i]);
-    }
-    printf("\n");
-
-    for (i = 0; i <= top; ++i) {
-        printf("%f ", dist[i]);
-    }
-    printf("\n");
-    */
 }
 
 float
@@ -237,15 +239,11 @@ main(int argc, char **argv)
         /* sort all points with respect to the lowest point */
         qsort(order, npoints, sizeof(*order), cmpPoint);
 
+        removeDuplicate();
+
         getConvexHull();
 
-        /*
-        for (i = 0; i <= top; ++i) {
-            printf("%f %f\n", pointSet[path[i]].x, pointSet[path[i]].y);
-        }
-        */
         float len = addOrigin();
-
         printf("%.2f\n", len);
         if (ncases != 0) {
             printf("\n");
